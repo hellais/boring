@@ -713,6 +713,9 @@ impl SslCurve {
         SslCurve(ffi::SSL_CURVE_X25519_KYBER768_DRAFT00 as _);
 
     #[cfg(feature = "pq-experimental")]
+    pub const X25519_MLKEM768: SslCurve = SslCurve(ffi::SSL_CURVE_X25519_MLKEM768 as _);
+
+    #[cfg(feature = "pq-experimental")]
     pub const X25519_KYBER768_DRAFT00_OLD: SslCurve =
         SslCurve(ffi::SSL_CURVE_X25519_KYBER768_DRAFT00_OLD as _);
 
@@ -3004,6 +3007,36 @@ impl SslRef {
             );
             // fun fact, SSL_set_alpn_protos has a reversed return code D:
             if r == 0 {
+                Ok(())
+            } else {
+                Err(ErrorStack::get())
+            }
+        }
+    }
+
+    #[corresponds(SSL_set_enable_ech_grease)]
+    pub fn enable_ech_grease(&mut self) -> Result<(), ErrorStack> {
+        unsafe {
+            ffi::SSL_set_enable_ech_grease(self.as_ptr(), 1);
+            Ok(())
+        }
+    }
+
+    #[corresponds(SSL_add_application_settings)]
+    pub fn add_application_settings(
+        &mut self,
+        protocols: &[u8],
+        settings: &[u8],
+    ) -> Result<(), ErrorStack> {
+        unsafe {
+            let r = ffi::SSL_add_application_settings(
+                self.as_ptr(),
+                protocols.as_ptr(),
+                protocols.len() as ProtosLen,
+                settings.as_ptr(),
+                settings.len(),
+            );
+            if r != 0 {
                 Ok(())
             } else {
                 Err(ErrorStack::get())
